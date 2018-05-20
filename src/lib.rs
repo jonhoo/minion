@@ -216,3 +216,70 @@ impl Canceller {
         self.keep_running.store(false, Ordering::SeqCst);
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::{
+        io::{self, prelude::*}, net, thread,
+    };
+
+    struct Service(net::TcpListener);
+
+    impl Cancellable for Service {
+        type Error = io::Error;
+        fn for_each(&mut self) -> Result<LoopState, Self::Error> {
+            let mut stream = self.0.accept()?.0;
+            write!(stream, "hello!")?;
+            Ok(LoopState::Continue)
+        }
+    }
+
+    impl Service {
+        fn new() -> Self {
+            Service(net::TcpListener::bind("127.0.0.1:0").unwrap())
+        }
+
+        fn port(&self) -> u16 {
+            self.0.local_addr().unwrap().port()
+        }
+    }
+
+    fn connect_assert(port: u16) {
+        let mut c = net::TcpStream::connect(("127.0.0.1", port)).unwrap();
+        let mut r = String::new();
+        c.read_to_string(&mut r).unwrap();
+        assert_eq!(r, "hello!");
+    }
+
+    #[test]
+    fn it_runs() {
+        let mut s = Service::new();
+        let port = s.port();
+        thread::spawn(move || {
+            s.run().unwrap();
+        });
+
+        connect_assert(port);
+        connect_assert(port);
+    }
+
+    #[test]
+    fn it_cancels() {
+        let s = Service::new();
+        let port = s.port();
+        let h = s.spawn();
+
+        connect_assert(port);
+        connect_assert(port);
+
+        h.cancel();
+
+        // cancel will ensure that for_each is not call *again*
+        // it will *not* terminate the currently running for_each
+        connect_assert(port);
+
+        // instead of calling for_each again, the loop should now have exited
+        h.wait().unwrap();
+    }
+}
