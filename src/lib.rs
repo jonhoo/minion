@@ -234,7 +234,10 @@ mod tests {
                 Err(ref e) if e.kind() == io::ErrorKind::Interrupted => {
                     return Ok(LoopState::Continue)
                 }
-                Err(e) => return Err(e),
+                Err(e) => {
+                    panic!("{:?}", e);
+                    return Err(e)
+                },
             };
             write!(stream, "hello!")?;
             Ok(LoopState::Continue)
