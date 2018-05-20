@@ -234,10 +234,7 @@ mod tests {
                 Err(ref e) if e.kind() == io::ErrorKind::Interrupted => {
                     return Ok(LoopState::Continue)
                 }
-                Err(e) => {
-                    panic!("{:?}", e);
-                    return Err(e)
-                },
+                Err(e) => return Err(e),
             };
             write!(stream, "hello!")?;
             Ok(LoopState::Continue)
@@ -254,11 +251,20 @@ mod tests {
         }
     }
 
-    fn connect_assert(port: u16) {
-        let mut c = net::TcpStream::connect(("127.0.0.1", port)).unwrap();
-        let mut r = String::new();
-        c.read_to_string(&mut r).unwrap();
-        assert_eq!(r, "hello!");
+    fn connect_assert(port: u16) -> Option<io::Error> {
+        match net::TcpStream::connect(("127.0.0.1", port)) {
+            Ok(mut c) => {
+                let mut r = String::new();
+                if let Err(e) = c.read_to_string(&mut r) {
+                    return Some(e);
+                }
+                assert_eq!(r, "hello!");
+                None
+            },
+            Err(e) => {
+                Some(e)
+            }
+        }
     }
 
     #[test]
@@ -269,8 +275,8 @@ mod tests {
             s.run().unwrap();
         });
 
-        connect_assert(port);
-        connect_assert(port);
+        assert!(connect_assert(port).is_none());
+        assert!(connect_assert(port).is_none());
     }
 
     #[test]
@@ -279,14 +285,19 @@ mod tests {
         let port = s.port();
         let h = s.spawn();
 
-        connect_assert(port);
-        connect_assert(port);
+        assert!(connect_assert(port).is_none());
+        assert!(connect_assert(port).is_none());
 
         h.cancel();
 
+        let mut succeeded = 0;
         // cancel will ensure that for_each is not call *again*
         // it will *not* terminate the currently running for_each
-        connect_assert(port);
+        // note that it *may* terminate early if accept() gets interrupted
+        while connect_assert(port).is_none() {
+            succeeded += 1;
+            assert!(succeeded <= 1);
+        }
 
         // instead of calling for_each again, the loop should now have exited
         h.wait().unwrap();
