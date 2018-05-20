@@ -229,7 +229,13 @@ mod tests {
     impl Cancellable for Service {
         type Error = io::Error;
         fn for_each(&mut self) -> Result<LoopState, Self::Error> {
-            let mut stream = self.0.accept()?.0;
+            let mut stream = match self.0.accept() {
+                Ok((stream, _)) => stream,
+                Err(ref e) if e.kind() == io::ErrorKind::Interrupted => {
+                    return Ok(LoopState::Continue)
+                }
+                Err(e) => return Err(e),
+            };
             write!(stream, "hello!")?;
             Ok(LoopState::Continue)
         }
