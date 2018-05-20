@@ -3,4 +3,18 @@ name = "minion"
 version = "0.1.0"
 authors = ["Jon Gjengset <jon@thesquareplanet.com>"]
 
+description = "Crate for managing cancellable services "
+readme = "README.md"
+
+homepage = "https://github.com/jonhoo/minion"
+repository = "https://github.com/jonhoo/minion.git"
+
+keywords = ["service", "cancel"]
+categories = ["network-programming", "rust-patterns"]
+
+license = "MIT/Apache-2.0"
+
+[badges]
+travis-ci = { repository = "jonhoo/minion" }
+
 [dependencies]
