@@ -138,7 +138,7 @@ pub trait Cancellable {
         let jh = {
             let keep_running = keep_running.clone();
             thread::spawn(move || {
-                while keep_running.load(Ordering::SeqCst) {
+                while keep_running.load(Ordering::Relaxed) {
                     match self.for_each() {
                         Ok(LoopState::Continue) => {}
                         Ok(LoopState::Break) => break,
@@ -213,7 +213,7 @@ impl Canceller {
     /// Instead, the next time [`Cancellable::for_each`] *would* be called, the service loop will
     /// return.
     pub fn cancel(&self) {
-        self.keep_running.store(false, Ordering::SeqCst);
+        self.keep_running.store(false, Ordering::Relaxed);
     }
 }
 
