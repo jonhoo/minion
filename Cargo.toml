@@ -1,9 +1,9 @@
 [package]
 name = "minion"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Jon Gjengset <jon@thesquareplanet.com>"]
 
-description = "Crate for managing cancellable services "
+description = "Crate for managing cancellable services"
 readme = "README.md"
 
 homepage = "https://github.com/jonhoo/minion"
