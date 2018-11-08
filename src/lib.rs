@@ -110,6 +110,7 @@ pub trait Cancellable {
     /// This method is called once for every iteration of the loop.
     ///
     /// If it errors, the outer service loop will also return with that same error.
+    /// This error can be accessed through `Handle::wait()`.
     /// If it returns a `LoopState`, the service loop will continue or break accordingly.
     /// If it panics, the panic will be propagated to the waiting thread.
     fn for_each(&mut self) -> Result<LoopState, Self::Error>;
@@ -184,9 +185,10 @@ impl<E> Handle<E> {
         }
     }
 
-    /// Wait for the service loop to exit, and return its result.
+    /// Block the current thread waiting for the service loop to exit, and return its result.
     ///
-    /// If the service loop panics, this method will also panic with the same error.
+    /// If the service loop returns an error, this method will return it in the `Err` value.
+    /// If the service loop panics, this method will also panic with the same error. 
     pub fn wait(self) -> Result<(), E> {
         match self.executor.join() {
             Ok(r) => r,
@@ -207,7 +209,8 @@ impl<E> Deref for Handle<E> {
 }
 
 impl Canceller {
-    /// Cancel the currently running service loop.
+    /// Cancel the currently running service loop. This method does not block; it sends a signal 
+    /// that the service loop should cease execution and returns immediately.
     ///
     /// Note that this will *not* interrupt a currently executing [`Cancellable::for_each`].
     /// Instead, the next time [`Cancellable::for_each`] *would* be called, the service loop will
