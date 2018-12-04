@@ -1,6 +1,6 @@
 [package]
 name = "minion"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["Jon Gjengset <jon@thesquareplanet.com>"]
 
 description = "Crate for managing cancellable services"
@@ -16,5 +16,6 @@ license = "MIT/Apache-2.0"
 
 [badges]
 travis-ci = { repository = "jonhoo/minion" }
+maintenance = { status = "passively-maintained" }
 
 [dependencies]
