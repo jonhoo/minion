@@ -194,7 +194,7 @@ impl<E> Handle<E> {
             Ok(r) => r,
             Err(e) => {
                 // propagate the panic
-                panic!(e)
+                std::panic::panic_any(e)
             }
         }
     }
